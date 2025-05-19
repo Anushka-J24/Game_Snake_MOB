@@ -34,6 +34,7 @@
       flex-direction: column;
       gap: 1em;
       text-align: center;
+      z-index: 10;
     }
 
     .menu.show, .game-over.show {
@@ -62,37 +63,36 @@
       border-radius: 8px;
     }
 
-    .mobile-controls {
+    .joystick-container {
+      display: none;
       position: absolute;
-      bottom: 20px;
+      bottom: 40px;
       left: 50%;
       transform: translateX(-50%);
-      display: none;
-      gap: 10px;
+      width: 120px;
+      height: 120px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 50%;
+      backdrop-filter: blur(4px);
       z-index: 5;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 10px;
-      border-radius: 15px;
+      touch-action: none;
     }
 
-    .mobile-controls button {
-      padding: 1em;
-      border-radius: 10px;
-      border: none;
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      font-size: 18px;
-      backdrop-filter: blur(4px);
+    .joystick-knob {
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      position: absolute;
+      top: 40px;
+      left: 40px;
+      transition: 0.1s ease;
+      pointer-events: none;
     }
 
     @media (max-width: 768px) {
-      .mobile-controls {
-        display: flex;
-      }
-
-      .mobile-controls button {
-        font-size: 16px;
-        padding: 0.8em;
+      .joystick-container {
+        display: block;
       }
     }
   </style>
@@ -134,11 +134,9 @@
     <button onclick="resumeGame()">Resume</button>
   </div>
 
-  <div class="mobile-controls" id="mobileControls">
-    <button onclick="mobileControl('left')">⬅️</button>
-    <button onclick="mobileControl('up')">⬆️</button>
-    <button onclick="mobileControl('down')">⬇️</button>
-    <button onclick="mobileControl('right')">➡️</button>
+  <!-- Joystick -->
+  <div class="joystick-container" id="joystick">
+    <div class="joystick-knob" id="joystickKnob"></div>
   </div>
 
   <audio id="grabSound" src="https://www.soundjay.com/button/beep-07.mp3" preload="auto"></audio>
@@ -234,12 +232,10 @@
     }
 
     function setDirection(dir) {
-      switch (dir) {
-        case 'left': if (direction.x !== 1) direction = { x: -1, y: 0 }; break;
-        case 'right': if (direction.x !== -1) direction = { x: 1, y: 0 }; break;
-        case 'up': if (direction.y !== 1) direction = { x: 0, y: -1 }; break;
-        case 'down': if (direction.y !== -1) direction = { x: 0, y: 1 }; break;
-      }
+      if (dir === 'left' && direction.x !== 1) direction = { x: -1, y: 0 };
+      if (dir === 'right' && direction.x !== -1) direction = { x: 1, y: 0 };
+      if (dir === 'up' && direction.y !== 1) direction = { x: 0, y: -1 };
+      if (dir === 'down' && direction.y !== -1) direction = { x: 0, y: 1 };
     }
 
     function pauseGame() {
@@ -250,18 +246,50 @@
       isPaused = false;
     }
 
-    function mobileControl(dir) {
-      setDirection(dir);
-      if ("vibrate" in navigator) {
-        navigator.vibrate(50);
-      }
-    }
-
     window.addEventListener("keydown", e => {
       if (e.key === "ArrowLeft") setDirection("left");
       if (e.key === "ArrowRight") setDirection("right");
       if (e.key === "ArrowUp") setDirection("up");
       if (e.key === "ArrowDown") setDirection("down");
+    });
+
+    // JOYSTICK CODE
+    const joystick = document.getElementById("joystick");
+    const knob = document.getElementById("joystickKnob");
+
+    let startX = 0;
+    let startY = 0;
+
+    joystick.addEventListener("touchstart", e => {
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+    });
+
+    joystick.addEventListener("touchmove", e => {
+      const touch = e.touches[0];
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+
+      knob.style.left = 40 + Math.max(-30, Math.min(30, dx / 3)) + "px";
+      knob.style.top = 40 + Math.max(-30, Math.min(30, dy / 3)) + "px";
+
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 30) setDirection("right");
+        if (dx < -30) setDirection("left");
+      } else {
+        if (dy > 30) setDirection("down");
+        if (dy < -30) setDirection("up");
+      }
+
+      if ("vibrate" in navigator) {
+        navigator.vibrate(30);
+      }
+    });
+
+    joystick.addEventListener("touchend", () => {
+      knob.style.left = "40px";
+      knob.style.top = "40px";
     });
   </script>
 </body>
