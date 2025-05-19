@@ -2,22 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Snake.io</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Snake.io - Mobile Web</title>
   <style>
-    body, html {
+    * { box-sizing: border-box; }
+    html, body {
       margin: 0;
       padding: 0;
       overflow: hidden;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(to bottom right, #1a1a1a, #333);
+      font-family: sans-serif;
+      background: #121212;
       color: white;
+      height: 100%;
+      touch-action: none;
     }
 
     #gameCanvas {
       display: block;
       margin: auto;
-      background-color: #111;
+      background-color: #000;
       border-radius: 20px;
     }
 
@@ -26,74 +29,61 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background-color: #222;
-      padding: 2em;
-      border-radius: 20px;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-      display: none;
-      flex-direction: column;
-      gap: 1em;
+      background: #222;
+      padding: 1.5rem;
+      border-radius: 15px;
       text-align: center;
       z-index: 10;
     }
 
     .menu.show, .game-over.show {
-      display: flex;
+      display: block;
     }
 
-    .option-box {
-      background-color: #333;
-      padding: 1em;
-      border-radius: 10px;
-    }
-
-    .pause-resume {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      display: flex;
-      gap: 10px;
-    }
-
-    .pause-resume button {
-      background: #555;
-      color: white;
-      padding: 0.5em 1em;
-      border: none;
-      border-radius: 8px;
+    .menu, .game-over {
+      display: none;
     }
 
     .joystick-container {
-      display: none;
-      position: absolute;
-      bottom: 40px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 120px;
-      height: 120px;
-      background: rgba(255, 255, 255, 0.05);
+      position: fixed;
+      bottom: 30px;
+      left: 30px;
+      width: 100px;
+      height: 100px;
       border-radius: 50%;
-      backdrop-filter: blur(4px);
+      background: rgba(255, 255, 255, 0.05);
       z-index: 5;
       touch-action: none;
     }
 
     .joystick-knob {
+      position: absolute;
       width: 40px;
       height: 40px;
-      background: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.4);
       border-radius: 50%;
-      position: absolute;
-      top: 40px;
-      left: 40px;
-      transition: 0.1s ease;
+      top: 30px;
+      left: 30px;
       pointer-events: none;
     }
 
-    @media (max-width: 768px) {
+    @media (min-width: 768px) {
       .joystick-container {
-        display: block;
+        display: none;
       }
+    }
+
+    select, input[type=color], button {
+      margin: 0.5rem;
+      padding: 0.5rem;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background: #444;
+      color: white;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -101,52 +91,39 @@
   <canvas id="gameCanvas"></canvas>
 
   <div class="menu show" id="startMenu">
-    <h1>Snake.io</h1>
-    <div class="option-box">
+    <h2>Snake.io</h2>
+    <div>
       <label>Difficulty:</label>
       <select id="difficulty">
         <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
+        <option value="medium" selected>Medium</option>
         <option value="hard">Hard</option>
       </select>
     </div>
-    <div class="option-box">
-      <label>Snake Color:</label>
-      <input type="color" id="snakeColor" value="#00FF00" />
+    <div>
+      <label>Snake:</label>
+      <input type="color" id="snakeColor" value="#00ff00" />
     </div>
-    <div class="option-box">
-      <label>Food Color:</label>
-      <input type="color" id="foodColor" value="#FF0000" />
+    <div>
+      <label>Food:</label>
+      <input type="color" id="foodColor" value="#ff0000" />
     </div>
-    <button onclick="startGame()">Start Game</button>
+    <button onclick="startGame()">Start</button>
   </div>
 
   <div class="game-over" id="gameOverMenu">
     <h2>Game Over</h2>
-    <div class="option-box">
-      <p id="scoreText"></p>
-    </div>
+    <p id="scoreText"></p>
     <button onclick="startGame()">Restart</button>
   </div>
 
-  <div class="pause-resume">
-    <button onclick="pauseGame()">Pause</button>
-    <button onclick="resumeGame()">Resume</button>
-  </div>
-
-  <!-- Joystick -->
   <div class="joystick-container" id="joystick">
     <div class="joystick-knob" id="joystickKnob"></div>
   </div>
 
-  <audio id="grabSound" src="https://www.soundjay.com/button/beep-07.mp3" preload="auto"></audio>
-  <audio id="gameOverSound" src="https://www.soundjay.com/button/beep-05.mp3" preload="auto"></audio>
-
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    const grabSound = document.getElementById("grabSound");
-    const gameOverSound = document.getElementById("gameOverSound");
 
     let tileCount = 20;
     let tileSize;
@@ -155,7 +132,7 @@
     let food = { x: 15, y: 15 };
     let gameInterval;
     let isPaused = false;
-    let speed = 200;
+    let speed = 150;
     let score = 0;
 
     function resizeCanvas() {
@@ -171,6 +148,7 @@
     function startGame() {
       document.getElementById("startMenu").classList.remove("show");
       document.getElementById("gameOverMenu").classList.remove("show");
+
       snake = [{ x: 10, y: 10 }];
       direction = { x: 0, y: 0 };
       food = {
@@ -178,9 +156,11 @@
         y: Math.floor(Math.random() * tileCount)
       };
       score = 0;
-      const difficulty = document.getElementById("difficulty").value;
-      speed = difficulty === "easy" ? 200 : difficulty === "medium" ? 150 : 100;
-      if (gameInterval) clearInterval(gameInterval);
+
+      const diff = document.getElementById("difficulty").value;
+      speed = diff === "easy" ? 200 : diff === "medium" ? 150 : 100;
+
+      clearInterval(gameInterval);
       gameInterval = setInterval(gameLoop, speed);
     }
 
@@ -189,13 +169,13 @@
 
       const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
       snake.unshift(head);
+
       if (head.x === food.x && head.y === food.y) {
-        grabSound.play();
+        score++;
         food = {
           x: Math.floor(Math.random() * tileCount),
           y: Math.floor(Math.random() * tileCount)
         };
-        score++;
       } else {
         snake.pop();
       }
@@ -206,17 +186,16 @@
         snake.slice(1).some(p => p.x === head.x && p.y === head.y)
       ) {
         clearInterval(gameInterval);
-        gameOverSound.play();
         document.getElementById("scoreText").textContent = `Score: ${score}`;
         document.getElementById("gameOverMenu").classList.add("show");
         return;
       }
 
-      drawGame();
+      draw();
     }
 
-    function drawGame() {
-      ctx.fillStyle = "#111";
+    function draw() {
+      ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const snakeColor = document.getElementById("snakeColor").value;
@@ -226,34 +205,27 @@
       ctx.fillRect(food.x * tileSize, food.y * tileSize, tileSize, tileSize);
 
       ctx.fillStyle = snakeColor;
-      for (let segment of snake) {
-        ctx.fillRect(segment.x * tileSize, segment.y * tileSize, tileSize, tileSize);
-      }
+      snake.forEach(s =>
+        ctx.fillRect(s.x * tileSize, s.y * tileSize, tileSize, tileSize)
+      );
     }
 
     function setDirection(dir) {
-      if (dir === 'left' && direction.x !== 1) direction = { x: -1, y: 0 };
-      if (dir === 'right' && direction.x !== -1) direction = { x: 1, y: 0 };
-      if (dir === 'up' && direction.y !== 1) direction = { x: 0, y: -1 };
-      if (dir === 'down' && direction.y !== -1) direction = { x: 0, y: 1 };
+      if (dir === "left" && direction.x !== 1) direction = { x: -1, y: 0 };
+      if (dir === "right" && direction.x !== -1) direction = { x: 1, y: 0 };
+      if (dir === "up" && direction.y !== 1) direction = { x: 0, y: -1 };
+      if (dir === "down" && direction.y !== -1) direction = { x: 0, y: 1 };
     }
 
-    function pauseGame() {
-      isPaused = true;
-    }
-
-    function resumeGame() {
-      isPaused = false;
-    }
-
-    window.addEventListener("keydown", e => {
+    // Keyboard for desktop fallback
+    document.addEventListener("keydown", e => {
       if (e.key === "ArrowLeft") setDirection("left");
       if (e.key === "ArrowRight") setDirection("right");
       if (e.key === "ArrowUp") setDirection("up");
       if (e.key === "ArrowDown") setDirection("down");
     });
 
-    // JOYSTICK CODE
+    // Joystick logic
     const joystick = document.getElementById("joystick");
     const knob = document.getElementById("joystickKnob");
 
@@ -267,29 +239,28 @@
     });
 
     joystick.addEventListener("touchmove", e => {
+      e.preventDefault();
       const touch = e.touches[0];
       const dx = touch.clientX - startX;
       const dy = touch.clientY - startY;
 
-      knob.style.left = 40 + Math.max(-30, Math.min(30, dx / 3)) + "px";
-      knob.style.top = 40 + Math.max(-30, Math.min(30, dy / 3)) + "px";
+      knob.style.left = 30 + Math.max(-30, Math.min(30, dx / 2)) + "px";
+      knob.style.top = 30 + Math.max(-30, Math.min(30, dy / 2)) + "px";
 
       if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 30) setDirection("right");
-        if (dx < -30) setDirection("left");
+        if (dx > 20) setDirection("right");
+        else if (dx < -20) setDirection("left");
       } else {
-        if (dy > 30) setDirection("down");
-        if (dy < -30) setDirection("up");
+        if (dy > 20) setDirection("down");
+        else if (dy < -20) setDirection("up");
       }
 
-      if ("vibrate" in navigator) {
-        navigator.vibrate(30);
-      }
+      if (navigator.vibrate) navigator.vibrate(10);
     });
 
     joystick.addEventListener("touchend", () => {
-      knob.style.left = "40px";
-      knob.style.top = "40px";
+      knob.style.left = "30px";
+      knob.style.top = "30px";
     });
   </script>
 </body>
