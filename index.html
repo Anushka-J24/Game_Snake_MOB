@@ -46,25 +46,6 @@
       border-radius: 10px;
     }
 
-    .mobile-controls {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
-      z-index: 5;
-    }
-
-    .mobile-controls button {
-      padding: 1em;
-      border-radius: 10px;
-      border: none;
-      background: #444;
-      color: white;
-      font-size: 18px;
-    }
-
     .pause-resume {
       position: absolute;
       top: 10px;
@@ -81,9 +62,36 @@
       border-radius: 8px;
     }
 
+    .mobile-controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      gap: 10px;
+      z-index: 5;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 10px;
+      border-radius: 15px;
+    }
+
+    .mobile-controls button {
+      padding: 1em;
+      border-radius: 10px;
+      border: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      font-size: 18px;
+      backdrop-filter: blur(4px);
+    }
+
     @media (max-width: 768px) {
+      .mobile-controls {
+        display: flex;
+      }
+
       .mobile-controls button {
-        font-size: 14px;
+        font-size: 16px;
         padding: 0.8em;
       }
     }
@@ -126,11 +134,11 @@
     <button onclick="resumeGame()">Resume</button>
   </div>
 
-  <div class="mobile-controls">
-    <button onclick="setDirection('left')">⬅️</button>
-    <button onclick="setDirection('up')">⬆️</button>
-    <button onclick="setDirection('down')">⬇️</button>
-    <button onclick="setDirection('right')">➡️</button>
+  <div class="mobile-controls" id="mobileControls">
+    <button onclick="mobileControl('left')">⬅️</button>
+    <button onclick="mobileControl('up')">⬆️</button>
+    <button onclick="mobileControl('down')">⬇️</button>
+    <button onclick="mobileControl('right')">➡️</button>
   </div>
 
   <audio id="grabSound" src="https://www.soundjay.com/button/beep-07.mp3" preload="auto"></audio>
@@ -194,7 +202,11 @@
         snake.pop();
       }
 
-      if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount || snake.slice(1).some(p => p.x === head.x && p.y === head.y)) {
+      if (
+        head.x < 0 || head.x >= tileCount ||
+        head.y < 0 || head.y >= tileCount ||
+        snake.slice(1).some(p => p.x === head.x && p.y === head.y)
+      ) {
         clearInterval(gameInterval);
         gameOverSound.play();
         document.getElementById("scoreText").textContent = `Score: ${score}`;
@@ -236,6 +248,13 @@
 
     function resumeGame() {
       isPaused = false;
+    }
+
+    function mobileControl(dir) {
+      setDirection(dir);
+      if ("vibrate" in navigator) {
+        navigator.vibrate(50);
+      }
     }
 
     window.addEventListener("keydown", e => {
